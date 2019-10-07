@@ -29,20 +29,23 @@ exports.signUp = async (req, res, next) => {
   }
 };
 exports.login =async (req, res, next) => {
-
+   const error={};
    try{
       const {email,password}=req.body;
-    
-      if(!email || !password){
-
-        return res.json({status:400,message:"Please enter email or password"})
+       
+      if(email=="" || password==""){
+         error.status=false;
+         error.message="Email address or password is missing ";
+         return res.status(400).json(error)
       }
       const user=await User.findOne({email});
      
       const correct=await user.comparePassword(password);
-      
+     
       if(!user || !correct){
-         return res.json({status:401,message:"Please enter corect email and password"})
+        error.status=false;
+        error.message="Please enter correct email and password";
+        return res.status(401).json(error)
       }
       const userInfo={};
 
@@ -58,9 +61,9 @@ exports.login =async (req, res, next) => {
            user:userInfo
         }
       })
-   }catch(exp){
+    }catch(exp){
 
-    res.status(500).json({status:false,message:"Unable to log "})
+      return res.status(500).json(error)
    }
   
 };
