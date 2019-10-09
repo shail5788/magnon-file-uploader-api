@@ -15,6 +15,6 @@ const storage=multer.diskStorage({
 })
 const upload =multer({storage:storage});
 
-router.post("/",upload.single("filename"),uploadController.uploadFile);
+router.post("/",upload.single("file"),uploadController.uploadFile);
 
 module.exports=router;	  
