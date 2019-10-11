@@ -1,38 +1,29 @@
 const path	=require("path");
 const fs    =require("fs");
-
 const unzip =require("unzipper");
 const nodemailer = require('nodemailer');
-const himalaya	 = require("himalaya");
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
 
 exports.uploadFile=async (req,res,next)=>{
 	
 	const files=req.file;
-	
 	const path=files.destination+"/"+files.filename;
 	const originalName=files.originalname;
 	
     try{
 			 await fs.createReadStream(path)
     		.pipe(unzip.Extract({ path:files.destination+"/delivery" }))
-	         console.log(req.headers.host);
-
-		     const status= await this.emailSend(req,originalName);
+	      
+			 const status= await this.emailSend(req,originalName);
 		 	 fs.unlinkSync(path);
-		 	 
 		 	  const filename=originalName.split(".");
 	          const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
-	          console.log(actualPath);
 	          const dirPath="./uploads/delivery/"+filename[0];
 	          const html =await this.readHtmlFile(actualPath);
-	          // console.log(html);
-	       
 	          const getImg=await this.extractJSON(html,dirPath);
 	          const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
-	          console.log(updatedHtml);
-			  res.status(200).json(getImg);
+	          
+	          //console.log(updatedHtml);
+	          res.status(200).json(getImg);
 		} catch(err){
 		 	console.log(err); 
 		}
@@ -107,11 +98,7 @@ exports.emailSend=async(req,filepath)=>{
 	try{
 		  const emailRecipentDetail=req;	
 		  const user    = await this.emailInfo(emailRecipentDetail)
-		  // const filename=filepath.split(".");
-    //       const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
-    //       console.log(actualPath);
-    //       const html =await this.readHtmlFile(actualPath);
-    //       console.log(himalaya.parse(html));
+
 		  user.filepath =filepath;
 	   	  const mailObj =await this.emailConfiguration(user);		 		                  	     
 	      const status  =await mailObj.transporter.sendMail(mailObj.mailOptions);
@@ -158,24 +145,28 @@ exports.getAllImage=(html, path)=>{
     
 
 }
+/********************************************************
+* this function replace all image path with given path  *
+* it will take four param								*					 *
+*********************************************************/
+
 exports.replaceImages=(html,path,allImage,req)=>{
 	var the_arr = path.split('/');
-    			  the_arr.pop();
-    var newPath = the_arr.join('/'); 
+    var newPath=the_arr[2]+"/"+the_arr[3];
+    var result='';
      for(let image of allImage){
-     		var expression="/"+image+"/g";
-     		var actualPath=req.headers.host+"/magnon-file-uploader-api/"+newPath+"/"+image
-     	    var result = html.replace(expression, actualPath);
-            console.log(expression);
-            console.log(actualPath);
-
-            var promise=new Promise((reject,resolve)=>{
+     		var expression=image;
+     		var re = new RegExp(expression, 'g');
+     		var actualPath="http://"+req.headers.host+"/"+newPath+"/"+image
+     	    result = html.replace(re, actualPath);
+     	    html=result;
+     	   
+     }
+      return new Promise((reject,resolve)=>{
 		    	   fs.writeFile(path, result, 'utf8', function (err) {
 			        if (err) reject(err);
+			        else resolve(html);
 			    }); 
-		    })
-     }
-
-    return promise;
+    });
          
 }
