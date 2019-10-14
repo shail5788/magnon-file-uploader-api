@@ -190,7 +190,7 @@ exports.replaceImages=(html,path,allImage,req)=>{
      for(let image of allImage){
      		var expression=image;
      		var re = new RegExp(expression, 'g');
-     		var actualPath="http://"+req.headers.host+"/"+newPath+"/"+image
+     		var actualPath="https://"+req.headers.host+"/"+newPath+"/"+image
      	    result = html.replace(re, actualPath);
      	    html=result;
      	   
