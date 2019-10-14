@@ -3,29 +3,60 @@ const fs    =require("fs");
 const unzip =require("unzipper");
 const nodemailer = require('nodemailer');
 
+class PlatformError {
+	constructor(code) {
+		this.code = code;
+		this.errors = [];
+		//return this;
+	}
+	addParamError(msg) {
+		this.errors.push({type: 'paramError', msg});
+		return this;
+	}
+	addDbError(msg) {
+		this.errors.push({type: 'dbError', msg});
+		return this;
+	}
+	addServerError(msg) {
+		this.errors.push({type: 'serverError', msg});
+		return this;
+	}
+}
+
+// console.log(new PlatformError(500).addParamError("Invalid param"));
 exports.uploadFile=async (req,res,next)=>{
 	
-	const files=req.file;
-	const path=files.destination+"/"+files.filename;
-	const originalName=files.originalname;
-	
     try{
-			 await fs.createReadStream(path)
-    		.pipe(unzip.Extract({ path:files.destination+"/delivery" }))
-	      
-			 const status= await this.emailSend(req,originalName);
-		 	 fs.unlinkSync(path);
-		 	  const filename=originalName.split(".");
-	          const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
-	          const dirPath="./uploads/delivery/"+filename[0];
-	          const html =await this.readHtmlFile(actualPath);
-	          const getImg=await this.extractJSON(html,dirPath);
-	          const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
-	          
-	          //console.log(updatedHtml);
-	          res.status(200).json(getImg);
+    	const files=req.file;
+		// Implement validation
+		const pError = new PlatformError(400);
+		// if (!files || files === null) {
+		// if (!files) {
+		// 	pError.addParamError("Invalid file");
+		// }
+		// if (pError.errors) {
+		// 	res.status(pError.code).json(pError);
+		// }
+		const path=files.destination+"/"+files.filename;
+		const originalName=files.originalname;
+		await fs.createReadStream(path)
+		.pipe(unzip.Extract({ path:files.destination+"/delivery" }))
+      
+		 // const status= await this.emailSend(req,originalName);
+	 	 fs.unlinkSync(path);
+	 	  const filename=originalName.split(".");
+          const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
+          const dirPath="./uploads/delivery/"+filename[0];
+          const html =await this.readHtmlFile(actualPath);
+          const getImg=await this.extractJSON(html,dirPath);
+          
+          const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
+          console.log(updatedHtml);
+           const status= await this.emailSend(req,originalName,updatedHtml);
+          res.status(200).json(getImg);
 		} catch(err){
 		 	console.log(err); 
+		 	res.status(500).json(new PlatformError(500).addParamError("Error on code"));
 		}
 	//
          	
@@ -50,7 +81,7 @@ exports.emailInfo=async(req)=>{
     // const status =await this.emailSend(userInfo);  
     // console.log(userInfo);
 }
-exports.emailConfiguration=async(userInfo)=>{
+exports.emailConfiguration=async(userInfo,emailContent)=>{
 	try {
          
 			const transporter = nodemailer.createTransport({
@@ -73,7 +104,7 @@ exports.emailConfiguration=async(userInfo)=>{
 			  from: 'shailendra.verma@magnon-egplus.com',
 			  to: mailTo,
 			  subject: userInfo.subject,
-			  html: await this.emailBody(userInfo)
+			  html: await this.emailBody(userInfo,emailContent)
 			};
 		  	const mailObj={};
 		  	mailObj.transporter=transporter;
@@ -86,21 +117,22 @@ exports.emailConfiguration=async(userInfo)=>{
 	
     
 }
-exports.emailBody=async (userInfo)=>{
+exports.emailBody=async (userInfo,emailContent)=>{
   var html=`<table>
   				<tr><th>Email</th><td>${userInfo.email}</td></tr>
                 <tr><th>Email</th><td>${userInfo.path}</td></tr>
   		  </table>`;
+     html+=emailContent;
   return html; 		  
 
 }
-exports.emailSend=async(req,filepath)=>{
+exports.emailSend=async(req,filepath,emailContent)=>{
 	try{
 		  const emailRecipentDetail=req;	
 		  const user    = await this.emailInfo(emailRecipentDetail)
 
 		  user.filepath =filepath;
-	   	  const mailObj =await this.emailConfiguration(user);		 		                  	     
+	   	  const mailObj =await this.emailConfiguration(user,emailContent);		 		                  	     
 	      const status  =await mailObj.transporter.sendMail(mailObj.mailOptions);
 		  console.log(status);
 
@@ -151,6 +183,7 @@ exports.getAllImage=(html, path)=>{
 *********************************************************/
 
 exports.replaceImages=(html,path,allImage,req)=>{
+	console.log('replaceImages====================');
 	var the_arr = path.split('/');
     var newPath=the_arr[2]+"/"+the_arr[3];
     var result='';
@@ -162,10 +195,15 @@ exports.replaceImages=(html,path,allImage,req)=>{
      	    html=result;
      	   
      }
-      return new Promise((reject,resolve)=>{
+     console.log('replaceImages=================2');
+      return new Promise((resolve, reject)=>{
 		    	   fs.writeFile(path, result, 'utf8', function (err) {
-			        if (err) reject(err);
-			        else resolve(html);
+			        if (err) {
+			        	console.log('replaceImages=================3');
+			        	return reject(err);
+			        }
+			        console.log('replaceImages=================4');
+			        return resolve(html);
 			    }); 
     });
          
