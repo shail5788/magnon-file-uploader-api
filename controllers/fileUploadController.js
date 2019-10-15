@@ -28,6 +28,7 @@ exports.uploadFile=async (req,res,next)=>{
 	
     try{
     	const files=req.file;
+    	console.log(files);
 		// Implement validation
 		const pError = new PlatformError(400);
 		// if (!files || files === null) {
@@ -51,7 +52,7 @@ exports.uploadFile=async (req,res,next)=>{
           const getImg=await this.extractJSON(html,dirPath);
           
           const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
-          console.log(updatedHtml);
+          // console.log(updatedHtml);
            const status= await this.emailSend(req,originalName,updatedHtml);
           res.status(200).json(getImg);
 		} catch(err){
@@ -184,13 +185,15 @@ exports.getAllImage=(html, path)=>{
 
 exports.replaceImages=(html,path,allImage,req)=>{
 	console.log('replaceImages====================');
+
+	console.log(req.headers.host);
 	var the_arr = path.split('/');
     var newPath=the_arr[2]+"/"+the_arr[3];
     var result='';
      for(let image of allImage){
      		var expression=image;
      		var re = new RegExp(expression, 'g');
-     		var actualPath="https://"+req.headers.host+"/"+newPath+"/"+image
+     		var actualPath="http://"+req.headers.host+"/"+newPath+"/"+image
      	    result = html.replace(re, actualPath);
      	    html=result;
      	   

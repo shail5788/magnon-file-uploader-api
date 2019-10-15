@@ -14,6 +14,14 @@ const userSchema = mongoose.Schema({
   password: {
     type: String,
     required: [true, "Password is required"]
+  },
+  isActive:{
+    type:Boolean,
+    default:false
+  },
+  role:{
+    type:String,
+    default:"user"
   }
  
  
