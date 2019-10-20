@@ -8,10 +8,20 @@ const getToken=(newUser)=>{
 exports.signUp = async (req, res, next) => {
   
   try {
+         var user=req.body;
+         if(typeof user.role!="undefined"&& typeof user.role!=undefined && user.role!=""){
+            var role="";
+             if(user.role){
+               role="user";
+             }  
+         }
+          
          const newUser = await User.create({
             name: req.body.name,
             email: req.body.email,
             password: req.body.password,
+            isAcitve:(req.body.isAcitve)?req.body.isAcitve:false,
+            role:role?role:"user"
            
           });
 
