@@ -11,6 +11,7 @@ router
 router
   .route("/:id")
   .get(userController.getUser)
-  .patch(userController.editUser);
+  .patch(userController.editUser)
+  .put(userController.changeUserPermission)
 
 module.exports = router;

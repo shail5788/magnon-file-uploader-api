@@ -6,8 +6,8 @@ const getToken=(newUser)=>{
 }
 
 exports.signUp = async (req, res, next) => {
-  
-  try {
+    
+    try{
          var user=req.body;
          if(typeof user.role!="undefined"&& typeof user.role!=undefined && user.role!=""){
             var role="";
@@ -15,7 +15,6 @@ exports.signUp = async (req, res, next) => {
                role="user";
              }  
          }
-          
          const newUser = await User.create({
             name: req.body.name,
             email: req.body.email,
