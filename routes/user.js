@@ -13,5 +13,6 @@ router
   .get(userController.getUser)
   .patch(userController.editUser)
   .put(userController.changeUserPermission)
+  .delete(userController.removeUser)
 
 module.exports = router;
