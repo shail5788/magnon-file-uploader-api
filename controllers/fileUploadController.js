@@ -50,10 +50,11 @@ exports.uploadFile=async (req,res,next)=>{
           const dirPath="./uploads/delivery/"+filename[0];
           const html =await this.readHtmlFile(actualPath);
           const getImg=await this.extractJSON(html,dirPath);
+          const dirpathForFile="delivery/"+filename[0]+"/index.html";
           
           const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
-          // console.log(updatedHtml);
-           const status= await this.emailSend(req,originalName,updatedHtml);
+          const previewUrl="http://"+req.headers.host+"/"+dirpathForFile;
+          const status= await this.emailSend(req,originalName,previewUrl,updatedHtml);
           res.status(200).json(getImg);
 		} catch(err){
 		 	console.log(err); 
@@ -79,8 +80,7 @@ exports.emailInfo=async(req)=>{
       userInfo.litmusEmail="shail5788@gmail.com"
     }
     return userInfo;
-    // const status =await this.emailSend(userInfo);  
-    // console.log(userInfo);
+    
 }
 exports.emailConfiguration=async(userInfo,emailContent)=>{
 	try {
@@ -119,20 +119,23 @@ exports.emailConfiguration=async(userInfo,emailContent)=>{
     
 }
 exports.emailBody=async (userInfo,emailContent)=>{
+	
   var html=`<table>
   				<tr><th>Email</th><td>${userInfo.email}</td></tr>
-                <tr><th>Email</th><td>${userInfo.path}</td></tr>
+                <tr><th>Email</th><td>${userInfo.filepath}</td></tr>
   		  </table>`;
      html+=emailContent;
   return html; 		  
 
 }
-exports.emailSend=async(req,filepath,emailContent)=>{
+exports.emailSend=async(req,filepath,previewUrl,emailContent)=>{
 	try{
 		  const emailRecipentDetail=req;	
 		  const user    = await this.emailInfo(emailRecipentDetail)
 
-		  user.filepath =filepath;
+		  user.filepath =previewUrl;
+		  console.log("shailendra get user info")
+		  console.log(user);
 	   	  const mailObj =await this.emailConfiguration(user,emailContent);		 		                  	     
 	      const status  =await mailObj.transporter.sendMail(mailObj.mailOptions);
 		  console.log(status);
@@ -167,7 +170,7 @@ exports.getAllImage=(html, path)=>{
 	     	  	}else{
 	     	  		  for (let file of files){
 			 	  		   const ext=file.split(".")[1];
-			     	  	   if(ext=="jpg"||ext=="JPG"||ext=="png" ||ext=="PNG"){
+			     	  	   if(ext=="jpg"||ext=="JPG"||ext=="png" ||ext=="PNG" ||ext=="gif" || ext=="GIF"){
 			                  farray.push(file);
 			     	  	   }
 						}
@@ -185,15 +188,17 @@ exports.getAllImage=(html, path)=>{
 
 exports.replaceImages=(html,path,allImage,req)=>{
 	console.log('replaceImages====================');
-
+   
 	console.log(req.headers.host);
 	var the_arr = path.split('/');
     var newPath=the_arr[2]+"/"+the_arr[3];
+    console.log(newPath)
     var result='';
      for(let image of allImage){
      		var expression=image;
      		var re = new RegExp(expression, 'g');
      		var actualPath="http://"+req.headers.host+"/"+newPath+"/"+image
+     	  
      	    result = html.replace(re, actualPath);
      	    html=result;
      	   

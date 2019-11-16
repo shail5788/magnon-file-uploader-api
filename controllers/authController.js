@@ -48,7 +48,7 @@ exports.login =async (req, res, next) => {
          return res.status(400).json(error)
       }
       const user=await User.findOne({email});
-     
+       
       const correct=await user.comparePassword(password);
      
       if(!user || !correct){
@@ -56,11 +56,23 @@ exports.login =async (req, res, next) => {
         error.message="Please enter correct email and password";
         return res.status(401).json(error)
       }
+      const isUser=JSON.parse(JSON.stringify(user));
+      console.log(isUser.isActive);
+     
+      
+      if(isUser.isActive==false){
+       
+        error.status=false;
+        error.message="Sorry! You don't have permission to access";
+        return res.status(402).json(error)
+      }
       const userInfo={};
-
+    
       userInfo._id=user._id;
       userInfo.email=user.email;
       userInfo.name=user.name;
+      userInfo.isAcitve=user.isAcitve;
+      userInfo.role=user.role;
       
       const token=getToken(userInfo);
       res.status(200).json({
