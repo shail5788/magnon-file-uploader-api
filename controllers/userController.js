@@ -24,12 +24,12 @@ exports.getUser =async(req, res, next) => {
 };
 exports.createUser = async(req, res, next) => {
 	try{
-
+          const user=req.body.user;
 		   const newUser=await User.create({
-		   	   name:req.body.name,
-			   email:req.body.email,
-			   password:req.body.password,
-			   role:(req.body.role)?req.body.role:"user",
+		   	   name:user.name,
+			   email:user.email,
+			   password:user.password,
+			   role:(user.role)?user.role:"user",
 			   isActive:false
 		   })
 		     res.status(200).json({

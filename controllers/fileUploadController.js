@@ -25,7 +25,7 @@ class PlatformError {
 
 // console.log(new PlatformError(500).addParamError("Invalid param"));
 exports.uploadFile=async (req,res,next)=>{
-	
+	const that=this;
     try{
     	const files=req.file;
     	console.log(files);
@@ -39,23 +39,39 @@ exports.uploadFile=async (req,res,next)=>{
 		// 	res.status(pError.code).json(pError);
 		// }
 		const path=files.destination+"/"+files.filename;
+		console.log(path);
 		const originalName=files.originalname;
-		await fs.createReadStream(path)
-		.pipe(unzip.Extract({ path:files.destination+"/delivery" }))
-      
-		 // const status= await this.emailSend(req,originalName);
-	 	 fs.unlinkSync(path);
-	 	  const filename=originalName.split(".");
-          const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
-          const dirPath="./uploads/delivery/"+filename[0];
-          const html =await this.readHtmlFile(actualPath);
-          const getImg=await this.extractJSON(html,dirPath);
-          const dirpathForFile="delivery/"+filename[0]+"/index.html";
-          
-          const updatedHtml=await this.replaceImages(html,actualPath,getImg,req);
-          const previewUrl="http://"+req.headers.host+"/"+dirpathForFile;
-          const status= await this.emailSend(req,originalName,previewUrl,updatedHtml);
-          res.status(200).json(getImg);
+		const stream= fs.createReadStream(path);
+		stream.pipe(unzip.Extract({ path:files.destination+"/delivery" }))
+			.on('close',async function(){
+			console.log("first debug")
+				 // const status= await this.emailSend(req,originalName);
+				 
+			 	 fs.unlinkSync(path);
+			 	  console.log("shailendra");
+			 	  const filename=originalName.split(".");
+			 	  console.log(filename);
+
+
+		          const actualPath="./uploads/delivery/"+filename[0]+"/index.html";
+		          if(fs.existsSync(actualPath)){
+		          	console.log("file exist")
+		          }else{
+		          	console.log("file not exist")
+		          }
+		          const dirPath="./uploads/delivery/"+filename[0];
+		          const html =await that.readHtmlFile(actualPath);
+		          const getImg=await that.extractJSON(html,dirPath);
+		          const dirpathForFile="delivery/"+filename[0]+"/index.html";
+		          console.log("dirpath");
+		          const updatedHtml=await that.replaceImages(html,actualPath,getImg,req);
+		           // console.log(updatedHtml);
+		          const previewUrl="http://"+req.headers.host+"/"+dirpathForFile;
+		          const status= await that.emailSend(req,originalName,previewUrl,updatedHtml);
+		          res.status(200).json(getImg);  	
+		})
+
+      	
 		} catch(err){
 		 	console.log(err); 
 		 	res.status(500).json(new PlatformError(500).addParamError("Error on code"));
@@ -189,23 +205,26 @@ exports.getAllImage=(html, path)=>{
 exports.replaceImages=(html,path,allImage,req)=>{
 	console.log('replaceImages====================');
    
-	console.log(req.headers.host);
+
 	var the_arr = path.split('/');
     var newPath=the_arr[2]+"/"+the_arr[3];
-    console.log(newPath)
+   
     var result='';
      for(let image of allImage){
      		var expression=image;
      		var re = new RegExp(expression, 'g');
+     		
      		var actualPath="http://"+req.headers.host+"/"+newPath+"/"+image
-     	  
+     	    console.log(actualPath);
      	    result = html.replace(re, actualPath);
+     	   // console.log(result);
      	    html=result;
      	   
      }
+
      console.log('replaceImages=================2');
       return new Promise((resolve, reject)=>{
-		    	   fs.writeFile(path, result, 'utf8', function (err) {
+		    	   fs.writeFile(path, html, 'utf8', function (err) {
 			        if (err) {
 			        	console.log('replaceImages=================3');
 			        	return reject(err);
